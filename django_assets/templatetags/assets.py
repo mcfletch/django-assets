@@ -58,24 +58,23 @@ class AssetsNode(template.Node):
             except KeyError:
                 return name
 
-        bundle = self.BundleClass(
+        return self.BundleClass(
             *[resolve_bundle(resolve_var(f)) for f in self.files],
             **{'output': resolve_var(self.output),
             'filters': resolve_var(self.filters),
             'debug': parse_debug_value(resolve_var(self.debug))})
-        bundle.env = get_env()
-        return bundle
 
     def render(self, context):
         bundle = self.resolve(context)
 
         result = u""
-        for url in bundle.urls(env=get_env()):
-            context.update({'ASSET_URL': url, 'EXTRA': bundle.extra})
-            try:
-                result += self.childnodes.render(context)
-            finally:
-                context.pop()
+        with bundle.bind(get_env()):
+            for url in bundle.urls():
+                context.update({'ASSET_URL': url, 'EXTRA': bundle.extra})
+                try:
+                    result += self.childnodes.render(context)
+                finally:
+                    context.pop()
         return result
 
 

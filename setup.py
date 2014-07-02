@@ -4,15 +4,17 @@
 from __future__ import with_statement
 from setuptools import setup, find_packages
 
+import multiprocessing
+
 # Figure out the version; this could be done by importing the
 # module, though that requires dependencies to be already installed,
 # which may not be the case when processing a pip requirements
 # file, for example.
-def parse_version(asignee):
+def parse_version(assignee):
     import os, re
     here = os.path.dirname(os.path.abspath(__file__))
     version_re = re.compile(
-        r'__version__ = (\(.*?\))')
+        r'%s = (\(.*?\))' % assignee)
     with open(os.path.join(here, 'django_assets', '__init__.py')) as fp:
         for line in fp:
             match = version_re.search(line)

@@ -118,6 +118,7 @@ class TestConfig(object):
         # Also, we are caseless.
         assert get_env().config['foO'] == 42
 
+
 class TestTemplateTag():
 
     def setup(self):
@@ -126,11 +127,10 @@ class TestTemplateTag():
             urls_to_fake = ['foo']
             def __init__(self, *a, **kw):
                 Bundle.__init__(self, *a, **kw)
-                self.env = get_env()
                 # Kind of hacky, but gives us access to the last Bundle
                 # instance used by our Django template tag.
                 test_instance.the_bundle = self
-            def urls(self, *a, **kw):
+            def _urls(self, *a, **kw):
                 return self.urls_to_fake
         # Inject our mock bundle class
         self._old_bundle_class = AssetsNode.BundleClass
@@ -246,7 +246,7 @@ class TestStaticFiles(TempEnvironmentHelper):
         settings.STATICFILES_DIRS = tuple(self.create_directories('foo', 'bar'))
         settings.STATICFILES_FINDERS += ('django_assets.finders.AssetsFinder',)
         self.create_files({'foo/file1': 'foo', 'bar/file2': 'bar'})
-        settings.DEBUG = True
+        settings.ASSETS_DEBUG = True
 
         # Reset the finders cache after each run, since our
         # STATICFILES_DIRS change every time.
@@ -262,7 +262,7 @@ class TestStaticFiles(TempEnvironmentHelper):
     def test_build_nodebug(self):
         """If debug is disabled, the finders are not used.
         """
-        settings.DEBUG = False
+        settings.ASSETS_DEBUG = False
         bundle = self.mkbundle('file1', 'file2', output="out")
         assert_raises(BundleError, bundle.build)
 
@@ -321,7 +321,8 @@ class TestStaticFiles(TempEnvironmentHelper):
 class TestFilter(TempEnvironmentHelper):
 
     def test_template(self):
-        self.create_files({'media/foo.html': '{{ num|filesizeformat }}'})
+        self.create_files({'media/foo.html': u'Ünicôdé-Chèck: {{ num|filesizeformat }}'})
         self.mkbundle('foo.html', output="out",
                       filters=get_filter('template', context={'num': 23232323})).build()
-        assert self.get('media/out') == '22.2 MB'
+        # Depending on Django version "filesizeformat" may contain a breaking space
+        assert self.get('media/out') in ('Ünicôdé-Chèck: 22.2\xa0MB', 'Ünicôdé-Chèck: 22.2 MB')

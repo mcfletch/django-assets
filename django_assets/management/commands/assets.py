@@ -100,6 +100,7 @@ class Command(BaseCommand):
     help = 'Manage assets.'
     args = 'subcommand'
     requires_model_validation = False
+    requires_system_checks = False
 
     def create_parser(self, prog_name, subcommand):
         # Overwrite parser creation with a LaxOptionParser that will
